@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HealthChat</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <style>
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            padding: 8px;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 4px;
+            display: none;
+        }
+        .error-message.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-container">
+            <div class="login-header">
+                <a href="/" class="logo-link">
+                    <h1>HealthChat</h1>
+                </a>
+                <p class="subtitle">Welcome back</p>
+            </div>
+
+            <form class="login-form" action="/login" method="POST">
+                <div class="error-message {% if error %}visible{% endif %}" id="errorMessage">
+                    {{ error }}
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            <svg class="eye-icon" viewBox="0 0 24 24" width="20" height="20">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="/forgot-password" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="login-btn">Log In</button>
+            </form>
+
+            <div class="signup-link">
+                Don't have an account? <a href="/signup">Sign up</a>
+            </div>
+
+            <div class="social-login">
+                <p class="divider"><span>Or continue with</span></p>
+                <div class="social-buttons">
+                    <button type="button" class="social-btn google">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/>
+                        </svg>
+                        <span>Google</span>
+                    </button>
+                    <button type="button" class="social-btn apple">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.07-.5-2.04-.48-3.16 0-1.4.64-2.19.55-3.08-.4C3.33 15.85 4.14 8.26 8.87 8c1.16.06 1.97.75 2.92.82 1.11-.28 2.17-.98 3.3-.84 1.76.23 3.07 1.15 3.87 2.93-3.47 2.08-2.89 6.98.58 8.37-.52 1.12-1.17 2.18-2.5 1zm-5.91-15.1c.06-2.13 1.88-3.9 3.95-3.78.22 1.92-1.67 3.97-3.95 3.78z"/>
+                        </svg>
+                        <span>Apple</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+    </script>
+</body>
+</html>

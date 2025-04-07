@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthChat - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="alternate icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: 5px;">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FF0000"/>
+            </svg>
+            HealthChat
+        </div>
+        <nav>
+            <a href="/login">Login</a>
+            <a href="/signup" class="btn">Sign Up</a>
+        </nav>
+    </header>
+    <main>
+        <div class="hero-section">
+            <h1>Your Personal Health Assistant</h1>
+            <p>Get instant medical guidance, schedule appointments, and connect with healthcare professionals all in one place.</p>
+        </div>
+        
+        <div class="action-section">
+            <div class="action-content">
+                <div class="buttons">
+                    <a href="#" onclick="handleServiceClick('/chat')" class="btn primary-btn">
+                        <span class="btn-icon">💬</span>
+                        Start Chat
+                    </a>
+                    <a href="#" onclick="handleServiceClick('/appointment')" class="btn secondary-btn">
+                        <span class="btn-icon">📅</span>
+                        Book Appointment
+                    </a>
+                    <a href="#" onclick="handleServiceClick('/reminders')" class="btn secondary-btn">
+                        <span class="btn-icon">⏰</span>
+                        Manage Reminders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <section class="features">
+            <div class="feature" data-description="Advanced AI system providing instant, accurate medical guidance 24/7.">
+                <h2>AI-Powered Chat</h2>
+                <p>Get instant responses to your medical queries from our advanced AI system.</p>
+            </div>
+            <div class="feature" data-description="Quick and easy appointment booking with your preferred healthcare provider.">
+                <h2>Easy Scheduling</h2>
+                <p>Book appointments with healthcare professionals at your convenience.</p>
+            </div>
+            <div class="feature" data-description="Smart health monitoring with personalized recommendations.">
+                <h2>Health Tracking</h2>
+                <p>Monitor your symptoms and get personalized health recommendations.</p>
+            </div>
+            <div class="feature" data-description="Set reminders for medications and hydration to maintain your health routine.">
+                <h2>Reminders System</h2>
+                <p>Get timely notifications for medications and hydration throughout the day.</p>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About HealthChat</h3>
+                <p>Your trusted AI-powered healthcare assistant, making healthcare accessible 24/7.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/faq">FAQs</a></li>
+                    <li><a href="/terms">Terms & Conditions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul>
+                    <li><a href="mailto:support@healthchat.com">support@healthchat.com</a></li>
+                    <li><a href="/contact">Contact Form</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 HealthChat. All rights reserved.</p>
+        </div>
+    </footer>
+    <script>
+    document.querySelectorAll('.feature').forEach(feature => {
+        // Create wrapper for front and back content
+        const content = feature.innerHTML;
+        const backContent = feature.getAttribute('data-description') || 'More information coming soon...';
+        
+        feature.innerHTML = `
+            <div class="feature-content">
+                <div class="feature-front">
+                    ${content}
+                </div>
+                <div class="feature-back">
+                    <p>${backContent}</p>
+                </div>
+            </div>
+        `;
+
+        // Add click handler for flipping
+        feature.addEventListener('click', () => {
+            feature.classList.toggle('flipped');
+        });
+    });
+
+    // Function to handle service button clicks
+    function handleServiceClick(serviceUrl) {
+        // Check if user is logged in
+        const isLoggedIn = {{ 'true' if session.get('logged_in') else 'false' }};
+        
+        if (isLoggedIn) {
+            // If logged in, go to the service
+            window.location.href = serviceUrl;
+        } else {
+            // If not logged in, go to login page
+            window.location.href = '/login';
+        }
+    }
+    </script>
+</body>
+</html>

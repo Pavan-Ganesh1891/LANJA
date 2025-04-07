@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - HealthChat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/contact.css') }}">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/">HealthChat</a>
+        </div>
+        <nav>
+            <a href="/login">Login</a>
+            <a href="/signup" class="btn">Sign Up</a>
+        </nav>
+    </header>
+    
+    <main class="contact-container">
+        <section class="contact-header">
+            <h1>Contact Us</h1>
+            <p>Get in touch with our team. We're here to help.</p>
+        </section>
+
+        <div class="contact-wrapper">
+            <section class="contact-info">
+                <div class="info-card">
+                    <div class="info-icon">📍</div>
+                    <h3>Our Location</h3>
+                    <p>123 Health Street<br>Medical District<br>NY 10001</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">📧</div>
+                    <h3>Email Us</h3>
+                    <p>support@healthchat.com<br>info@healthchat.com</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-icon">⏰</div>
+                    <h3>Working Hours</h3>
+                    <p>Monday - Friday: 9AM - 6PM<br>Weekend: 10AM - 4PM</p>
+                </div>
+            </section>
+
+            <section class="contact-form-section">
+                <div class="form-container">
+                    <h2>Send us a Message</h2>
+                    <form class="contact-form" action="/contact" method="POST">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <input type="text" id="subject" name="subject" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn submit-btn">Send Message</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <!-- Footer content -->
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 HealthChat. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html> 

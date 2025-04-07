@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - HealthChat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/appointment.css') }}">
+    <style>
+        /* Additional styles for form fields */
+        .patient-info {
+            margin-top: 30px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #2563eb;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .required:after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 2px;
+        }
+        
+        .form-error {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        input.error, select.error, textarea.error {
+            border-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/dashboard">HealthChat</a>
+        </div>
+        <nav>
+            {% if session.get('logged_in') %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="/chat">Chat</a>
+                <a href="/appointment">Appointments</a>
+                <a href="/reminders">Reminders</a>
+                <a href="/logout" class="btn">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/signup" class="btn">Sign Up</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="appointment-container">
+        <div class="back-button">
+            <a href="/" class="back-link">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </a>
+        </div>
+
+        <section class="appointment-content">
+            <h1>Schedule Your Appointment</h1>
+            
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <button class="month-nav prev">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <h2 id="currentMonth">January 2024</h2>
+                    <button class="month-nav next">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="calendar-days">
+                        <span>MON</span>
+                        <span>TUE</span>
+                        <span>WED</span>
+                        <span>THU</span>
+                        <span>FRI</span>
+                        <span>SAT</span>
+                        <span>SUN</span>
+                    </div>
+                    <div class="calendar-dates" id="calendarDates">
+                        <!-- Calendar dates will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="time-slots">
+                <h3>Available Time Slots</h3>
+                <div class="time-slots-grid">
+                    <button class="time-slot">6:00am</button>
+                    <button class="time-slot">7:00am</button>
+                    <button class="time-slot">9:00am</button>
+                    <button class="time-slot">10:00am</button>
+                    <button class="time-slot">11:00am</button>
+                    <button class="time-slot">12:00pm</button>
+                    <button class="time-slot">1:00pm</button>
+                    <button class="time-slot">2:00pm</button>
+                    <button class="time-slot">3:00pm</button>
+                </div>
+            </div>
+
+            <div class="timezone-selector">
+                <label for="timezone">Time zone</label>
+                <select id="timezone" name="timezone">
+                    <option value="IST">India Standard Time (IST)</option>
+                    <option value="EST">Eastern Standard Time (EST)</option>
+                    <option value="PST">Pacific Standard Time (PST)</option>
+                    <option value="GMT">Greenwich Mean Time (GMT)</option>
+                </select>
+            </div>
+
+            <!-- GetForm.io Form Integration -->
+            <form action="https://getform.io/f/apjnvdla" method="POST" class="appointment-form" id="appointmentForm" onsubmit="return validateForm()">
+                <!-- Hidden fields for appointment details -->
+                <input type="hidden" id="selectedDate" name="appointment_date">
+                <input type="hidden" id="selectedTime" name="appointment_time">
+                <input type="hidden" id="selectedTimezone" name="appointment_timezone">
+                
+                <!-- Add hidden Honeypot input to prevent spams -->
+                <input type="hidden" name="_gotcha" style="display:none !important">
+                
+                <div class="patient-info">
+                    <h3>Patient Information</h3>
+                    
+                    <div class="two-columns">
+                        <div class="form-group">
+                            <label for="firstName" class="required">First Name</label>
+                            <input type="text" id="firstName" name="first_name" required>
+                            <div class="form-error" id="firstNameError">Please enter your first name</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="lastName" class="required">Last Name</label>
+                            <input type="text" id="lastName" name="last_name" required>
+                            <div class="form-error" id="lastNameError">Please enter your last name</div>
+                        </div>
+                    </div>
+                    
+                    <div class="two-columns">
+                        <div class="form-group">
+                            <label for="email" class="required">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                            <div class="form-error" id="emailError">Please enter a valid email address</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone" class="required">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" required>
+                            <div class="form-error" id="phoneError">Please enter a valid phone number</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="visitReason" class="required">Reason for Visit</label>
+                        <select id="visitReason" name="visit_reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="general-checkup">General Check-up</option>
+                            <option value="follow-up">Follow-up Appointment</option>
+                            <option value="consultation">Medical Consultation</option>
+                            <option value="emergency">Emergency Care</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="form-error" id="visitReasonError">Please select a reason for your visit</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="symptoms">Symptoms or Notes</label>
+                        <textarea id="symptoms" name="symptoms" rows="3" placeholder="Please describe your symptoms or any information that would help us prepare for your visit"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="first_visit" value="yes">
+                            This is my first visit
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="consent" required>
+                            I consent to sharing my information for appointment purposes
+                        </label>
+                        <div class="form-error" id="consentError">You must consent to proceed</div>
+                    </div>
+                </div>
+                
+                <!-- Success URL after form submission -->
+                <input type="hidden" name="_next" value="{{ url_for('slot_confirmation', _external=True) }}">
+                
+                <button type="submit" class="confirm-btn" id="submitBtn" disabled>Confirm Appointment</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Calendar functionality
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+
+        function updateCalendar() {
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            
+            document.getElementById('currentMonth').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+            generateCalendar();
+        }
+
+        function generateCalendar() {
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const today = new Date();
+            
+            const calendarDates = document.getElementById('calendarDates');
+            calendarDates.innerHTML = '';
+
+            // Adjust for Monday as first day (Sunday as 7)
+            const startingDay = firstDay === 0 ? 6 : firstDay - 1;
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDay = document.createElement('button');
+                emptyDay.classList.add('calendar-date', 'empty');
+                calendarDates.appendChild(emptyDay);
+            }
+
+            // Add the days of the month
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateButton = document.createElement('button');
+                dateButton.classList.add('calendar-date');
+                dateButton.textContent = i;
+                
+                // Create date object for comparison
+                const currentDateObj = new Date(currentYear, currentMonth, i);
+                const isToday = currentDateObj.toDateString() === today.toDateString();
+                const isPast = currentDateObj < new Date(today.setHours(0, 0, 0, 0));
+                
+                if (isToday) {
+                    dateButton.classList.add('today');
+                }
+                
+                if (isPast) {
+                    dateButton.classList.add('past');
+                    dateButton.disabled = true;
+                } else {
+                    dateButton.addEventListener('click', () => selectDate(dateButton, i));
+                }
+                
+                calendarDates.appendChild(dateButton);
+            }
+        }
+
+        function selectDate(dateButton, day) {
+            document.querySelectorAll('.calendar-date').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            dateButton.classList.add('selected');
+            
+            // Format date as YYYY-MM-DD
+            const selectedDate = new Date(currentYear, currentMonth, day);
+            const formattedDate = selectedDate.toISOString().split('T')[0];
+            document.getElementById('selectedDate').value = formattedDate;
+            checkFormValidity();
+        }
+
+        // Month navigation
+        document.querySelector('.month-nav.prev').addEventListener('click', () => {
+            const today = new Date();
+            const previousMonth = new Date(currentYear, currentMonth - 1);
+            
+            // Prevent navigating to past months
+            if (previousMonth.getFullYear() < today.getFullYear() || 
+                (previousMonth.getFullYear() === today.getFullYear() && 
+                 previousMonth.getMonth() < today.getMonth())) {
+                return;
+            }
+            
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            updateCalendar();
+        });
+
+        document.querySelector('.month-nav.next').addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            updateCalendar();
+        });
+
+        // Time slot selection
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.addEventListener('click', () => {
+                document.querySelectorAll('.time-slot').forEach(s => {
+                    s.classList.remove('selected');
+                });
+                slot.classList.add('selected');
+                document.getElementById('selectedTime').value = slot.textContent;
+                checkFormValidity();
+            });
+        });
+
+        // Check if all form fields are filled for enabling submit button
+        function checkFormValidity() {
+            const date = document.getElementById('selectedDate').value;
+            const time = document.getElementById('selectedTime').value;
+            const timezone = document.getElementById('selectedTimezone').value;
+            
+            // Enable/disable submit button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = !(date && time && timezone);
+        }
+
+        // Initialize timezone
+        document.getElementById('timezone').addEventListener('change', function() {
+            document.getElementById('selectedTimezone').value = this.value;
+            checkFormValidity();
+        });
+        
+        document.getElementById('selectedTimezone').value = document.getElementById('timezone').value;
+
+        // Form validation
+        function validateForm() {
+            let isValid = true;
+            
+            // Basic validation for required fields
+            const fields = [
+                { id: 'firstName', errorId: 'firstNameError' },
+                { id: 'lastName', errorId: 'lastNameError' },
+                { id: 'email', errorId: 'emailError' },
+                { id: 'phone', errorId: 'phoneError' },
+                { id: 'visitReason', errorId: 'visitReasonError' }
+            ];
+            
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                const errorElement = document.getElementById(field.errorId);
+                
+                if (!element.value.trim()) {
+                    element.classList.add('error');
+                    errorElement.style.display = 'block';
+                    isValid = false;
+                } else {
+                    element.classList.remove('error');
+                    errorElement.style.display = 'none';
+                }
+            });
+            
+            // Additional validation for email
+            const email = document.getElementById('email');
+            if (email.value.trim() && !/^\S+@\S+\.\S+$/.test(email.value)) {
+                email.classList.add('error');
+                document.getElementById('emailError').style.display = 'block';
+                document.getElementById('emailError').textContent = 'Please enter a valid email address';
+                isValid = false;
+            }
+            
+            // Check if date and time are selected
+            if (!document.getElementById('selectedDate').value) {
+                alert('Please select an appointment date');
+                isValid = false;
+            } else if (!document.getElementById('selectedTime').value) {
+                alert('Please select an appointment time');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // Initialize calendar
+        updateCalendar();
+    </script>
+</body>
+</html>

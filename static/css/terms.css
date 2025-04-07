@@ -1,0 +1,155 @@
+/* Terms page specific styles */
+.terms-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Header section */
+.terms-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.terms-header h1 {
+    font-size: 2.5rem;
+    color: #1E40AF;
+    margin-bottom: 0.5rem;
+}
+
+.last-updated {
+    color: #64748B;
+    font-size: 0.9rem;
+}
+
+/* Content sections */
+.terms-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.terms-section {
+    margin-bottom: 2.5rem;
+}
+
+.terms-section:last-child {
+    margin-bottom: 0;
+}
+
+.terms-section h2 {
+    color: #1E40AF;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #E2E8F0;
+}
+
+.terms-section p {
+    color: #4B5563;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+/* Lists styling */
+.terms-list {
+    list-style: none;
+    padding-left: 1.5rem;
+}
+
+.terms-list li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+    color: #4B5563;
+}
+
+.terms-list li::before {
+    content: "•";
+    color: #3B82F6;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+/* Important notes */
+.important-note {
+    background-color: #FEF2F2;
+    border-left: 4px solid #EF4444;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Info boxes */
+.info-box {
+    background-color: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.info-box h3 {
+    color: #0369A1;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.info-box ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.info-box li {
+    margin-bottom: 0.5rem;
+    color: #4B5563;
+    padding-left: 1.2rem;
+    position: relative;
+}
+
+.info-box li::before {
+    content: "→";
+    color: #0EA5E9;
+    position: absolute;
+    left: 0;
+}
+
+/* Contact information */
+.contact-info {
+    background-color: #F8FAFC;
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+.contact-info p {
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .terms-container {
+        padding: 1rem;
+    }
+
+    .terms-header {
+        padding: 1.5rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .terms-header h1 {
+        font-size: 2rem;
+    }
+
+    .terms-content {
+        padding: 1.5rem;
+    }
+
+    .terms-section h2 {
+        font-size: 1.3rem;
+    }
+} 

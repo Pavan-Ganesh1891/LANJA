@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthChat - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="alternate icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <style>
+        .dashboard-container {
+            padding: 30px 0;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .welcome-section h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .welcome-section p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+        
+        .service-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+            padding: 30px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        .service-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .service-description {
+            color: #666;
+            margin-bottom: 25px;
+            flex-grow: 1;
+        }
+        
+        .dashboard-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        
+        .dashboard-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .dashboard-btn.primary {
+            background-color: #4287f5;
+            color: white;
+        }
+        
+        .dashboard-btn.primary:hover {
+            background-color: #3271e0;
+        }
+        
+        .dashboard-btn.secondary {
+            background-color: #42c3f5;
+            color: white;
+        }
+        
+        .dashboard-btn.secondary:hover {
+            background-color: #30a7d8;
+        }
+        
+        .dashboard-btn.tertiary {
+            background-color: #7042f5;
+            color: white;
+        }
+        
+        .dashboard-btn.tertiary:hover {
+            background-color: #5c30d8;
+        }
+        
+        .chat-card {
+            border-top: 5px solid #4287f5;
+        }
+        
+        .appointment-card {
+            border-top: 5px solid #42c3f5;
+        }
+        
+        .reminders-card {
+            border-top: 5px solid #7042f5;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: 5px;">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FF0000"/>
+                </svg>
+                HealthChat
+            </a>
+        </div>
+        <nav>
+            <a href="/dashboard" class="active">Dashboard</a>
+            <a href="/conversations">My Conversations</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="dashboard-container">
+            <div class="welcome-section">
+                <h1>Welcome, {{ first_name }}!</h1>
+                <p>What would you like to do today?</p>
+            </div>
+            
+            <div class="services-grid">
+                <div class="service-card chat-card">
+                    <div>
+                        <div class="service-icon">💬</div>
+                        <h2 class="service-title">AI Health Chat</h2>
+                        <p class="service-description">
+                            Ask questions about symptoms, conditions, treatments, and get instant medical guidance from our advanced AI system.
+                        </p>
+                    </div>
+                    <a href="/chat" class="dashboard-btn primary">Start Chat</a>
+                </div>
+                
+                <div class="service-card appointment-card">
+                    <div>
+                        <div class="service-icon">📅</div>
+                        <h2 class="service-title">Book Appointment</h2>
+                        <p class="service-description">
+                            Schedule virtual or in-person appointments with healthcare professionals at your convenience.
+                        </p>
+                    </div>
+                    <a href="/appointment" class="dashboard-btn secondary">Schedule Now</a>
+                </div>
+                
+                <div class="service-card reminders-card">
+                    <div>
+                        <div class="service-icon">⏰</div>
+                        <h2 class="service-title">Health Reminders</h2>
+                        <p class="service-description">
+                            Set up medication reminders and hydration alerts to help maintain your health routine.
+                        </p>
+                    </div>
+                    <a href="/reminders" class="dashboard-btn tertiary">Manage Reminders</a>
+                </div>
+                
+                {% if is_admin %}
+                <div class="service-card admin-card" style="border-top: 5px solid #f55142;">
+                    <div>
+                        <div class="service-icon">👑</div>
+                        <h2 class="service-title">Admin Panel</h2>
+                        <p class="service-description">
+                            Access administrator functions to manage users, view system statistics, and monitor platform usage.
+                        </p>
+                    </div>
+                    <a href="/admin" class="dashboard-btn" style="background-color: #f55142; color: white;">Admin Dashboard</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About HealthChat</h3>
+                <p>Your trusted AI-powered healthcare assistant, making healthcare accessible 24/7.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/faq">FAQs</a></li>
+                    <li><a href="/terms">Terms & Conditions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul>
+                    <li><a href="mailto:support@healthchat.com">support@healthchat.com</a></li>
+                    <li><a href="/contact">Contact Form</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 HealthChat. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html> 

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Confirmed - HealthChat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/slot_confirmation.css') }}">
+    <style>
+        /* Additional confirmation styles */
+        .info-alert {
+            background-color: #f3f4f6;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            color: #4b5563;
+        }
+        
+        .email-icon {
+            color: #3b82f6;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .next-steps {
+            margin-top: 30px;
+            background-color: #f0fdf4;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .next-steps h3 {
+            margin-top: 0;
+            color: #166534;
+        }
+        
+        .next-steps-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .next-steps-list li {
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 28px;
+        }
+        
+        .next-steps-list li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #166534;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/">HealthChat</a>
+        </div>
+        <nav>
+            <a href="/login">Login</a>
+            <a href="/signup" class="btn">Sign Up</a>
+        </nav>
+    </header>
+
+    <main class="confirmation-container">
+        <div class="confirmation-card">
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24" width="100" height="100">
+                    <circle cx="12" cy="12" r="11" fill="#4ADE80"/>
+                    <path d="M7 13l3 3 7-7" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            
+            <h1>Appointment Confirmed!</h1>
+            <p class="success-message">Your appointment has been successfully scheduled</p>
+
+            <div class="appointment-details">
+                <div class="detail-item">
+                    <span class="label">Date:</span>
+                    <span class="value">{{ appointment.date if appointment.date else request.args.get('appointment_date', 'Not provided') }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Time:</span>
+                    <span class="value">{{ appointment.time if appointment.time else request.args.get('appointment_time', 'Not provided') }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Timezone:</span>
+                    <span class="value">{{ appointment.timezone if appointment.timezone else request.args.get('appointment_timezone', 'Not provided') }}</span>
+                </div>
+            </div>
+            
+            <div class="info-alert">
+                <svg class="email-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2m20 0v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6m20 0l-10 7L2 6"/>
+                </svg>
+                A confirmation email has been sent to your email address with all the appointment details.
+            </div>
+            
+            <div class="next-steps">
+                <h3>Next Steps</h3>
+                <ul class="next-steps-list">
+                    <li>Check your email for appointment confirmation</li>
+                    <li>Arrive 15 minutes before your scheduled time</li>
+                    <li>Bring your ID and health insurance card (if applicable)</li>
+                    <li>Prepare a list of your current medications</li>
+                </ul>
+            </div>
+
+            <div class="confirmation-actions">
+                <a href="/" class="btn home-btn">Return to Home</a>
+                <button onclick="window.print()" class="btn print-btn">Print Details</button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <!-- Footer content -->
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 HealthChat. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html> 

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthChat - Reminders</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="alternate icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <style>
+        /* Reminders specific styles */
+        .reminders-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        
+        .reminder-section {
+            margin-bottom: 30px;
+        }
+        
+        .reminder-item {
+            background-color: #f5f5f5;
+            border-left: 4px solid #4287f5;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .medication-reminder {
+            border-left-color: #4287f5;
+        }
+        
+        .hydration-reminder {
+            border-left-color: #42c3f5;
+        }
+        
+        .reminder-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .reminder-form {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-grid-full {
+            grid-column: span 2;
+        }
+        
+        .toggle-form-btn {
+            margin-bottom: 15px;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid #4287f5;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: 5px;">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FF0000"/>
+                </svg>
+                HealthChat
+            </a>
+        </div>
+        <nav>
+            <a href="/chat">Chat</a>
+            <a href="/appointment">Appointments</a>
+            <a href="/reminders" class="active">Reminders</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1>Health Reminders</h1>
+        
+        <div class="reminders-container">
+            <div class="info-box" style="background-color: #e8f4ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #4287f5;">
+                <h3 style="margin-top: 0;">How Reminders Work</h3>
+                <p>Reminders are delivered in two ways:</p>
+                <ol>
+                    <li><strong>Email Notifications:</strong> You'll receive emails at your registered email address when it's time to take medication or drink water.</li>
+                    <li><strong>Browser Notifications:</strong> When you're using HealthChat, you'll also see pop-up notifications in your browser.</li>
+                </ol>
+                <p>Make sure to set accurate times to receive your reminders when you need them!</p>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="medications">Medications</div>
+                <div class="tab" data-tab="hydration">Hydration</div>
+            </div>
+            
+            <!-- Medications Tab -->
+            <div class="tab-content active" id="medications-tab">
+                <div class="reminder-section">
+                    <button class="btn toggle-form-btn" id="toggle-med-form">Add New Medication Reminder</button>
+                    
+                    <div class="reminder-form" id="med-form" style="display: none;">
+                        <form id="medication-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="med-name">Medication Name</label>
+                                    <input type="text" id="med-name" name="med-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="med-dosage">Dosage</label>
+                                    <input type="text" id="med-dosage" name="med-dosage" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="med-time">Time</label>
+                                    <input type="time" id="med-time" name="med-time" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="med-frequency">Frequency</label>
+                                    <select id="med-frequency" name="med-frequency" required>
+                                        <option value="daily">Daily</option>
+                                        <option value="twice-daily">Twice Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="as-needed">As Needed</option>
+                                    </select>
+                                </div>
+                                <div class="form-group form-grid-full">
+                                    <label for="med-notes">Notes</label>
+                                    <textarea id="med-notes" name="med-notes" rows="2"></textarea>
+                                </div>
+                                <div class="form-group form-grid-full">
+                                    <button type="submit" class="btn primary-btn">Save Reminder</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div id="medication-reminders-list">
+                        {% if medication_reminders %}
+                            {% for reminder in medication_reminders %}
+                                <div class="reminder-item medication-reminder" data-id="{{ reminder.id }}">
+                                    <div class="reminder-details">
+                                        <h3>{{ reminder.data.name }}</h3>
+                                        <p><strong>Dosage:</strong> {{ reminder.data.dosage }}</p>
+                                        <p><strong>Time:</strong> {{ reminder.data.time }}</p>
+                                        <p><strong>Frequency:</strong> {{ reminder.data.frequency }}</p>
+                                        {% if reminder.data.notes %}
+                                            <p><strong>Notes:</strong> {{ reminder.data.notes }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="reminder-controls">
+                                        <button class="btn delete-reminder" data-id="{{ reminder.id }}" data-type="medication">Delete</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No medication reminders set up yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hydration Tab -->
+            <div class="tab-content" id="hydration-tab">
+                <div class="reminder-section">
+                    <button class="btn toggle-form-btn" id="toggle-hydration-form">Add New Hydration Reminder</button>
+                    
+                    <div class="reminder-form" id="hydration-form" style="display: none;">
+                        <form id="hydration-reminder-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="hydration-amount">Amount (ml)</label>
+                                    <input type="number" id="hydration-amount" name="hydration-amount" required min="50" max="2000" value="250">
+                                </div>
+                                <div class="form-group">
+                                    <label for="hydration-frequency">Frequency (hours)</label>
+                                    <select id="hydration-frequency" name="hydration-frequency" required>
+                                        <option value="1">Every hour</option>
+                                        <option value="2" selected>Every 2 hours</option>
+                                        <option value="3">Every 3 hours</option>
+                                        <option value="4">Every 4 hours</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hydration-start">Start Time</label>
+                                    <input type="time" id="hydration-start" name="hydration-start" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="hydration-end">End Time</label>
+                                    <input type="time" id="hydration-end" name="hydration-end" required>
+                                </div>
+                                <div class="form-group form-grid-full">
+                                    <button type="submit" class="btn primary-btn">Save Reminder</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div id="hydration-reminders-list">
+                        {% if hydration_reminders %}
+                            {% for reminder in hydration_reminders %}
+                                <div class="reminder-item hydration-reminder" data-id="{{ reminder.id }}">
+                                    <div class="reminder-details">
+                                        <h3>Hydration Reminder</h3>
+                                        <p><strong>Amount:</strong> {{ reminder.data.amount }} ml</p>
+                                        <p><strong>Frequency:</strong> Every {{ reminder.data.frequency }} hour(s)</p>
+                                        <p><strong>Active Hours:</strong> {{ reminder.data.start_time }} to {{ reminder.data.end_time }}</p>
+                                    </div>
+                                    <div class="reminder-controls">
+                                        <button class="btn delete-reminder" data-id="{{ reminder.id }}" data-type="hydration">Delete</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p>No hydration reminders set up yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Reminder notification popup -->
+    <div class="notification" id="reminder-notification">
+        <span id="notification-message"></span>
+    </div>
+    
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About HealthChat</h3>
+                <p>Your trusted AI-powered healthcare assistant, making healthcare accessible 24/7.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/faq">FAQs</a></li>
+                    <li><a href="/terms">Terms & Conditions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul>
+                    <li><a href="mailto:support@healthchat.com">support@healthchat.com</a></li>
+                    <li><a href="/contact">Contact Form</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 HealthChat. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Toggle form visibility
+        document.getElementById('toggle-med-form').addEventListener('click', function() {
+            const form = document.getElementById('med-form');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        document.getElementById('toggle-hydration-form').addEventListener('click', function() {
+            const form = document.getElementById('hydration-form');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show selected tab content
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId + '-tab').classList.add('active');
+            });
+        });
+        
+        // Form submission for medication
+        document.getElementById('medication-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const reminderData = {
+                type: 'medication',
+                name: document.getElementById('med-name').value,
+                dosage: document.getElementById('med-dosage').value,
+                time: document.getElementById('med-time').value,
+                frequency: document.getElementById('med-frequency').value,
+                notes: document.getElementById('med-notes').value
+            };
+            
+            saveReminder(reminderData);
+        });
+        
+        // Form submission for hydration
+        document.getElementById('hydration-reminder-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const reminderData = {
+                type: 'hydration',
+                amount: document.getElementById('hydration-amount').value,
+                frequency: document.getElementById('hydration-frequency').value,
+                start_time: document.getElementById('hydration-start').value,
+                end_time: document.getElementById('hydration-end').value
+            };
+            
+            saveReminder(reminderData);
+        });
+        
+        // Save reminder function
+        function saveReminder(data) {
+            fetch('/save_reminder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to show new reminder
+                    window.location.reload();
+                } else {
+                    alert('Error saving reminder: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+        
+        // Delete reminder
+        document.querySelectorAll('.delete-reminder').forEach(button => {
+            button.addEventListener('click', function() {
+                const reminderId = this.getAttribute('data-id');
+                const reminderType = this.getAttribute('data-type');
+                
+                if (confirm(`Are you sure you want to delete this ${reminderType} reminder?`)) {
+                    fetch('/delete_reminder', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            reminder_id: reminderId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the reminder element from the DOM
+                            this.closest('.reminder-item').remove();
+                        } else {
+                            alert('Error deleting reminder: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                    });
+                }
+            });
+        });
+        
+        // Display notification function
+        function showNotification(message) {
+            const notification = document.getElementById('reminder-notification');
+            const messageElement = document.getElementById('notification-message');
+            
+            messageElement.textContent = message;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Simulate notifications for demonstration
+        function checkReminders() {
+            // In a real application, this would be based on the actual time and registered reminders
+            // For demo purposes, we'll randomly show notifications
+            const currentHour = new Date().getHours();
+            
+            // Only show notifications during reasonable hours (8 AM - 9 PM)
+            if (currentHour >= 8 && currentHour <= 21) {
+                const shouldShowNotification = Math.random() < 0.1; // 10% chance every check
+                
+                if (shouldShowNotification) {
+                    const notificationTypes = [
+                        "Time to take your medication: Ibuprofen 400mg",
+                        "Hydration reminder: Drink 250ml of water now",
+                        "Don't forget your evening vitamins!",
+                        "You've been sitting for a while, time to stand up and stretch",
+                        "Hydration check: Have you had water in the last hour?"
+                    ];
+                    
+                    const randomNotification = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
+                    showNotification(randomNotification);
+                }
+            }
+        }
+        
+        // Check for reminders every minute (for demo purposes)
+        setInterval(checkReminders, 60000);
+        
+        // Also check once soon after page load
+        setTimeout(checkReminders, 10000);
+        
+        // Set default times for hydration form
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const startTime = new Date(now);
+            startTime.setHours(8, 0); // 8:00 AM
+            
+            const endTime = new Date(now);
+            endTime.setHours(20, 0); // 8:00 PM
+            
+            document.getElementById('hydration-start').value = startTime.toTimeString().slice(0, 5);
+            document.getElementById('hydration-end').value = endTime.toTimeString().slice(0, 5);
+        });
+    </script>
+</body>
+</html> 

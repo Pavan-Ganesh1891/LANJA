@@ -1,0 +1,239 @@
+.appointment-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+}
+
+.back-button {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+}
+
+.back-link {
+    color: #4B5563;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.appointment-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+h1 {
+    font-size: 2rem;
+    color: #1E293B;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+/* Calendar Styles */
+.calendar-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.month-nav {
+    background: none;
+    border: none;
+    color: #4B5563;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+}
+
+.month-nav:hover {
+    color: #1E40AF;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.calendar-days span {
+    font-size: 0.875rem;
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.calendar-dates {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-date {
+    aspect-ratio: 1;
+    border: none;
+    background: none;
+    font-size: 1rem;
+    color: #1E293B;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.calendar-date:hover:not(.empty) {
+    background-color: #E0E7FF;
+}
+
+.calendar-date.selected {
+    background-color: #1E40AF;
+    color: white;
+}
+
+.calendar-date.today {
+    background-color: #E0E7FF;
+    font-weight: bold;
+}
+
+.calendar-date.empty {
+    cursor: default;
+}
+
+/* Time Slots */
+.time-slots {
+    margin-bottom: 2rem;
+}
+
+.time-slots h3 {
+    color: #1E293B;
+    margin-bottom: 1rem;
+}
+
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.time-slot {
+    padding: 0.75rem;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    background: white;
+    color: #1E293B;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.time-slot:hover {
+    border-color: #1E40AF;
+    background-color: #F8FAFC;
+}
+
+.time-slot.selected {
+    background-color: #1E40AF;
+    color: white;
+    border-color: #1E40AF;
+}
+
+/* Timezone Selector */
+.timezone-selector {
+    margin-bottom: 2rem;
+}
+
+.timezone-selector label {
+    display: block;
+    color: #4B5563;
+    margin-bottom: 0.5rem;
+}
+
+.timezone-selector select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    color: #1E293B;
+    background-color: white;
+}
+
+/* Confirm Button */
+.confirm-btn {
+    width: 100%;
+    padding: 1rem;
+    background-color: #1E40AF;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.confirm-btn:hover:not(:disabled) {
+    background-color: #1E3A8A;
+}
+
+.confirm-btn:disabled {
+    background-color: #CBD5E1;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .appointment-container {
+        padding: 1rem;
+    }
+
+    .back-button {
+        top: 1rem;
+        left: 1rem;
+    }
+
+    .appointment-content {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+} 
+
+/* Add these styles to your existing calendar styles */
+.calendar-date.past {
+    color: #CBD5E1;
+    cursor: not-allowed;
+    background-color: #F1F5F9;
+}
+
+.calendar-date.past:hover {
+    background-color: #F1F5F9;
+}
+
+.calendar-date.today {
+    background-color: #E0E7FF;
+    font-weight: bold;
+    border: 2px solid #1E40AF;
+}
+
+.month-nav.prev[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+} 
