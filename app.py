@@ -553,5 +553,11 @@ if __name__ == '__main__':
     # Start the reminder scheduler
     start_reminder_scheduler()
     
+    # Get port from environment variable or use default
+    port = int(os.environ.get('PORT', 5000))
+    
     # Run the application
-    app.run(debug=True)
+    if app.config['FLASK_ENV'] == 'development':
+        app.run(debug=True, host='127.0.0.1', port=port)
+    else:
+        app.run(host='0.0.0.0', port=port)
