@@ -187,18 +187,18 @@
                     <div id="medication-reminders-list">
                         {% if medication_reminders %}
                             {% for reminder in medication_reminders %}
-                                <div class="reminder-item medication-reminder" data-id="{{ reminder.id }}">
+                                <div class="reminder-item medication-reminder" data-id="{{ reminder._id }}">
                                     <div class="reminder-details">
-                                        <h3>{{ reminder.data.name }}</h3>
-                                        <p><strong>Dosage:</strong> {{ reminder.data.dosage }}</p>
-                                        <p><strong>Time:</strong> {{ reminder.data.time }}</p>
-                                        <p><strong>Frequency:</strong> {{ reminder.data.frequency }}</p>
-                                        {% if reminder.data.notes %}
-                                            <p><strong>Notes:</strong> {{ reminder.data.notes }}</p>
+                                        <h3>{{ reminder.reminder_data.name }}</h3>
+                                        <p><strong>Dosage:</strong> {{ reminder.reminder_data.dosage }}</p>
+                                        <p><strong>Time:</strong> {{ reminder.reminder_data.time }}</p>
+                                        <p><strong>Frequency:</strong> {{ reminder.reminder_data.frequency }}</p>
+                                        {% if reminder.reminder_data.notes %}
+                                            <p><strong>Notes:</strong> {{ reminder.reminder_data.notes }}</p>
                                         {% endif %}
                                     </div>
                                     <div class="reminder-controls">
-                                        <button class="btn delete-reminder" data-id="{{ reminder.id }}" data-type="medication">Delete</button>
+                                        <button class="btn delete-reminder" data-id="{{ reminder._id }}" data-type="medication">Delete</button>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -248,15 +248,15 @@
                     <div id="hydration-reminders-list">
                         {% if hydration_reminders %}
                             {% for reminder in hydration_reminders %}
-                                <div class="reminder-item hydration-reminder" data-id="{{ reminder.id }}">
+                                <div class="reminder-item hydration-reminder" data-id="{{ reminder._id }}">
                                     <div class="reminder-details">
                                         <h3>Hydration Reminder</h3>
-                                        <p><strong>Amount:</strong> {{ reminder.data.amount }} ml</p>
-                                        <p><strong>Frequency:</strong> Every {{ reminder.data.frequency }} hour(s)</p>
-                                        <p><strong>Active Hours:</strong> {{ reminder.data.start_time }} to {{ reminder.data.end_time }}</p>
+                                        <p><strong>Amount:</strong> {{ reminder.reminder_data.amount }} ml</p>
+                                        <p><strong>Frequency:</strong> Every {{ reminder.reminder_data.frequency }} hours</p>
+                                        <p><strong>Time Range:</strong> {{ reminder.reminder_data.start_time }} - {{ reminder.reminder_data.end_time }}</p>
                                     </div>
                                     <div class="reminder-controls">
-                                        <button class="btn delete-reminder" data-id="{{ reminder.id }}" data-type="hydration">Delete</button>
+                                        <button class="btn delete-reminder" data-id="{{ reminder._id }}" data-type="hydration">Delete</button>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -302,174 +302,140 @@
     </footer>
     
     <script>
-        // Toggle form visibility
-        document.getElementById('toggle-med-form').addEventListener('click', function() {
-            const form = document.getElementById('med-form');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        document.getElementById('toggle-hydration-form').addEventListener('click', function() {
-            const form = document.getElementById('hydration-form');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Update active tab
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Show selected tab content
-                const tabId = this.getAttribute('data-tab');
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                document.getElementById(tabId + '-tab').classList.add('active');
-            });
-        });
-        
-        // Form submission for medication
-        document.getElementById('medication-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const reminderData = {
-                type: 'medication',
-                name: document.getElementById('med-name').value,
-                dosage: document.getElementById('med-dosage').value,
-                time: document.getElementById('med-time').value,
-                frequency: document.getElementById('med-frequency').value,
-                notes: document.getElementById('med-notes').value
-            };
-            
-            saveReminder(reminderData);
-        });
-        
-        // Form submission for hydration
-        document.getElementById('hydration-reminder-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const reminderData = {
-                type: 'hydration',
-                amount: document.getElementById('hydration-amount').value,
-                frequency: document.getElementById('hydration-frequency').value,
-                start_time: document.getElementById('hydration-start').value,
-                end_time: document.getElementById('hydration-end').value
-            };
-            
-            saveReminder(reminderData);
-        });
-        
-        // Save reminder function
-        function saveReminder(data) {
-            fetch('/save_reminder', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload the page to show new reminder
-                    window.location.reload();
-                } else {
-                    alert('Error saving reminder: ' + data.error);
-                }
-            })
-            .catch(error => {
-                alert('Error: ' + error);
-            });
-        }
-        
-        // Delete reminder
-        document.querySelectorAll('.delete-reminder').forEach(button => {
-            button.addEventListener('click', function() {
-                const reminderId = this.getAttribute('data-id');
-                const reminderType = this.getAttribute('data-type');
-                
-                if (confirm(`Are you sure you want to delete this ${reminderType} reminder?`)) {
-                    fetch('/delete_reminder', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            reminder_id: reminderId
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Remove the reminder element from the DOM
-                            this.closest('.reminder-item').remove();
-                        } else {
-                            alert('Error deleting reminder: ' + data.error);
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error);
-                    });
-                }
-            });
-        });
-        
-        // Display notification function
-        function showNotification(message) {
-            const notification = document.getElementById('reminder-notification');
-            const messageElement = document.getElementById('notification-message');
-            
-            messageElement.textContent = message;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        }
-        
-        // Simulate notifications for demonstration
-        function checkReminders() {
-            // In a real application, this would be based on the actual time and registered reminders
-            // For demo purposes, we'll randomly show notifications
-            const currentHour = new Date().getHours();
-            
-            // Only show notifications during reasonable hours (8 AM - 9 PM)
-            if (currentHour >= 8 && currentHour <= 21) {
-                const shouldShowNotification = Math.random() < 0.1; // 10% chance every check
-                
-                if (shouldShowNotification) {
-                    const notificationTypes = [
-                        "Time to take your medication: Ibuprofen 400mg",
-                        "Hydration reminder: Drink 250ml of water now",
-                        "Don't forget your evening vitamins!",
-                        "You've been sitting for a while, time to stand up and stretch",
-                        "Hydration check: Have you had water in the last hour?"
-                    ];
-                    
-                    const randomNotification = notificationTypes[Math.floor(Math.random() * notificationTypes.length)];
-                    showNotification(randomNotification);
-                }
-            }
-        }
-        
-        // Check for reminders every minute (for demo purposes)
-        setInterval(checkReminders, 60000);
-        
-        // Also check once soon after page load
-        setTimeout(checkReminders, 10000);
-        
-        // Set default times for hydration form
         document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const startTime = new Date(now);
-            startTime.setHours(8, 0); // 8:00 AM
+            // Toggle form visibility
+            document.getElementById('toggle-med-form').addEventListener('click', function() {
+                document.getElementById('med-form').style.display = 
+                    document.getElementById('med-form').style.display === 'none' ? 'block' : 'none';
+            });
             
-            const endTime = new Date(now);
-            endTime.setHours(20, 0); // 8:00 PM
+            document.getElementById('toggle-hydration-form').addEventListener('click', function() {
+                document.getElementById('hydration-form').style.display = 
+                    document.getElementById('hydration-form').style.display === 'none' ? 'block' : 'none';
+            });
             
-            document.getElementById('hydration-start').value = startTime.toTimeString().slice(0, 5);
-            document.getElementById('hydration-end').value = endTime.toTimeString().slice(0, 5);
+            // Handle medication form submission
+            document.getElementById('medication-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const reminderData = {
+                    type: 'medication',
+                    name: document.getElementById('med-name').value,
+                    dosage: document.getElementById('med-dosage').value,
+                    time: document.getElementById('med-time').value,
+                    frequency: document.getElementById('med-frequency').value,
+                    notes: document.getElementById('med-notes').value
+                };
+                
+                saveReminder(reminderData);
+            });
+            
+            // Handle hydration form submission
+            document.getElementById('hydration-reminder-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const reminderData = {
+                    type: 'hydration',
+                    amount: document.getElementById('hydration-amount').value,
+                    frequency: document.getElementById('hydration-frequency').value,
+                    start_time: document.getElementById('hydration-start').value,
+                    end_time: document.getElementById('hydration-end').value
+                };
+                
+                saveReminder(reminderData);
+            });
+            
+            // Save reminder function
+            function saveReminder(reminderData) {
+                fetch('/save_reminder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(reminderData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Reminder saved successfully!');
+                        location.reload(); // Reload to show new reminder
+                    } else {
+                        showNotification('Error saving reminder: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error saving reminder', 'error');
+                });
+            }
+            
+            // Delete reminder function
+            document.querySelectorAll('.delete-reminder').forEach(button => {
+                button.addEventListener('click', function() {
+                    const reminderId = this.getAttribute('data-id');
+                    const reminderType = this.getAttribute('data-type');
+                    
+                    if (confirm('Are you sure you want to delete this reminder?')) {
+                        fetch('/delete_reminder', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                reminder_id: reminderId,
+                                type: reminderType
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showNotification('Reminder deleted successfully!');
+                                this.closest('.reminder-item').remove();
+                            } else {
+                                showNotification('Error deleting reminder: ' + data.error, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showNotification('Error deleting reminder', 'error');
+                        });
+                    }
+                });
+            });
+            
+            // Show notification function
+            function showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                // Show notification
+                setTimeout(() => {
+                    notification.style.display = 'block';
+                }, 100);
+                
+                // Hide and remove notification after 3 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and content
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(`${this.getAttribute('data-tab')}-tab`).classList.add('active');
+                });
+            });
         });
     </script>
 </body>

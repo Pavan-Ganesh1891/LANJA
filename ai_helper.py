@@ -1,75 +1,58 @@
 import cohere
 from typing import Dict
 import logging
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Use the API key directly
-cohere_client = cohere.Client('pGdW2vRcRYnh8PKvJoZ5Slm8j0p1ZNHHw8bYVQTo')
-max_response_tokens = 150  # Adjust for shorter or longer responses
+# Initialize Cohere client with API key
+COHERE_API_KEY = os.getenv('COHERE_API_KEY', 'pGdW2vRcRYnh8PKvJoZ5Slm8j0p1ZNHHw8bYVQTo')
+cohere_client = cohere.Client(COHERE_API_KEY)
 
-def generate_medical_response(user_responses: Dict[str, str]) -> str:
-    # Create a structured prompt from user responses
-    prompt = f"""
-Based on the following patient information:
-- Symptoms: {user_responses.get('symptoms', 'Not provided')}
-- Recent Medicines: {user_responses.get('recent-medicines', 'None')}
-- Long-term Conditions: {user_responses.get('long-term-conditions', 'No')}
-{f"- Condition Details: {user_responses.get('conditions-details')}" if user_responses.get('conditions-details') else ''}
-
-Please provide a concise medical analysis with:
-1. Brief assessment of symptoms
-2. Whether immediate medical attention is needed
-3. General recommendations
-
-Answer (concise):
-"""
-
+def generate_medical_response(user_input):
+    """
+    Generate an AI response based on user input while maintaining appropriate conversation boundaries.
+    """
     try:
-        logger.info("Sending request to Cohere generate API")
-        result = cohere_client.generate(
-            model='command',
-            prompt=prompt,
-            max_tokens=max_response_tokens,
-            temperature=0.3,
-            k=0,
-            stop_sequences=[],
-            return_likelihoods='NONE'
+        # Generate response using Cohere API
+        response = cohere_client.chat(
+            message=user_input,
+            preamble="""You are a helpful AI health assistant. You provide general health information and guidance while being clear that you are not a substitute for professional medical advice. Keep your responses concise and focused.""",
+            temperature=0.7,
+            max_tokens=150
         )
-        logger.info("Successfully received response from Cohere API")
-        return result.generations[0].text.strip()
+        return response.text
     except Exception as e:
-        logger.error(f"Error calling Cohere API: {str(e)}")
-        return f"I apologize, but I'm unable to provide a response at the moment. Please consult with a healthcare provider for medical advice." 
+        logger.error(f"Error generating response: {str(e)}")
+        return ("I apologize, but I'm having trouble processing your request. "
+                "Could you please try again or rephrase your question?")
 
-def handle_followup_question(question: str, previous_responses: Dict[str, str]) -> str:
-    prompt = f"""
-Context - Patient with following information:
-- Symptoms: {previous_responses.get('symptoms', 'Not provided')}
-- Recent Medicines: {previous_responses.get('recent-medicines', 'None')}
-- Long-term Conditions: {previous_responses.get('long-term-conditions', 'No')}
-{f"- Condition Details: {previous_responses.get('conditions-details')}" if previous_responses.get('conditions-details') else ''}
-
-Question: {question}
-
-Provide a concise and helpful answer based on the medical context above:
-"""
-
+def handle_followup_question(question, previous_responses):
+    """
+    Handle follow-up questions while maintaining conversation boundaries.
+    """
     try:
-        logger.info("Sending follow-up request to Cohere generate API")
-        result = cohere_client.generate(
-            model='command',
-            prompt=prompt,
-            max_tokens=max_response_tokens,
-            temperature=0.3,
-            k=0,
-            stop_sequences=[],
-            return_likelihoods='NONE'
+        # Format conversation history
+        conversation_history = "\n".join([f"Previous response: {resp}" for resp in previous_responses])
+        
+        # Generate response using Cohere API with conversation context
+        response = cohere_client.chat(
+            message=question,
+            preamble=f"""You are a helpful AI health assistant. You provide general health information and guidance while being clear that you are not a substitute for professional medical advice. Keep your responses concise and focused.
+
+Previous conversation:
+{conversation_history}""",
+            temperature=0.7,
+            max_tokens=150
         )
-        logger.info("Successfully received follow-up response from Cohere API")
-        return result.generations[0].text.strip()
+        return response.text
     except Exception as e:
-        logger.error(f"Error calling Cohere API for follow-up: {str(e)}")
-        return f"I apologize, but I'm unable to provide a response at the moment. Please consult with a healthcare provider for medical advice." 
+        logger.error(f"Error generating follow-up response: {str(e)}")
+        return ("I apologize, but I'm having trouble processing your request. "
+                "Could you please try again or rephrase your question?") 

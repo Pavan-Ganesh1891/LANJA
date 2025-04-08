@@ -22,6 +22,19 @@
         .error-message.visible {
             display: block;
         }
+        .success-message {
+            color: #27ae60;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            padding: 8px;
+            background-color: rgba(39, 174, 96, 0.1);
+            border-radius: 4px;
+            display: none;
+        }
+        .success-message.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -38,6 +51,12 @@
                 <div class="error-message {% if error %}visible{% endif %}" id="errorMessage">
                     {{ error }}
                 </div>
+                
+                {% if success %}
+                <div class="success-message visible">
+                    {{ success }}
+                </div>
+                {% endif %}
                 
                 <div class="form-group">
                     <label for="email">Email Address</label>

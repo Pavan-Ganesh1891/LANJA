@@ -1,153 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conversations - HealthChat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <style>
-        .conversations-container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .header h1 {
-            margin: 0;
-            color: #2a70e0;
-        }
-        
-        .header-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .btn-primary {
-            background-color: #2a70e0;
-            color: white;
-            border: none;
-        }
-        
-        .btn-primary:hover {
-            background-color: #1a5cbe;
-        }
-        
-        .btn-secondary {
-            background-color: #f5f5f5;
-            color: #333;
-            border: none;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #e0e0e0;
-        }
-        
-        .conversation-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .conversation-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            transition: background-color 0.2s;
-        }
-        
-        .conversation-item:hover {
-            background-color: #f9f9f9;
-        }
-        
-        .conversation-link {
-            display: block;
-            color: inherit;
-            text-decoration: none;
-        }
-        
-        .conversation-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        
-        .conversation-time {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .conversation-preview {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .empty-message {
-            text-align: center;
-            padding: 40px 0;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    <div class="conversations-container">
-        <div class="header">
-            <h1>Your Conversations</h1>
-            <div class="header-buttons">
-                <a href="/chat" class="btn btn-primary">New Chat</a>
-                <a href="/" class="btn btn-secondary">Home</a>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="conversations-container">
+    <div class="conversations-header">
+        <h2><i class="fas fa-history"></i> Past Conversations</h2>
+        <a href="{{ url_for('chat') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Chat
+        </a>
+    </div>
+
+    {% if conversations %}
+    <div class="conversation-list">
+        {% for conversation in conversations %}
+        <div class="conversation-card">
+            <div class="conversation-info">
+                <div class="conversation-date">
+                    {% if conversation.conversation_data and conversation.conversation_data.messages %}
+                        {{ conversation.conversation_data.messages[0].timestamp }}
+                    {% else %}
+                        No date available
+                    {% endif %}
+                </div>
+                <div class="conversation-preview">
+                    {% if conversation.conversation_data and conversation.conversation_data.messages %}
+                        {% set first_message = conversation.conversation_data.messages[0] %}
+                        <div class="preview-user">You: {{ first_message.user[:50] }}{% if first_message.user|length > 50 %}...{% endif %}</div>
+                        {% if first_message.ai %}
+                        <div class="preview-ai">AI: {{ first_message.ai[:50] }}{% if first_message.ai|length > 50 %}...{% endif %}</div>
+                        {% endif %}
+                    {% else %}
+                        No messages available
+                    {% endif %}
+                </div>
+            </div>
+            <div class="conversation-actions">
+                <a href="{{ url_for('view_conversation', conversation_id=conversation.conversation_id) }}" 
+                   class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-eye"></i> View
+                </a>
             </div>
         </div>
-        
-        {% if conversations %}
-            <ul class="conversation-list">
-                {% for conversation in conversations %}
-                    <li class="conversation-item">
-                        <a href="/conversation/{{ conversation.conversation_id }}" class="conversation-link">
-                            <div class="conversation-header">
-                                <h3>{{ conversation.data.user_responses.get('symptoms', 'New Conversation') }}</h3>
-                                <span class="conversation-time">{{ conversation.timestamp }}</span>
-                            </div>
-                            <div class="conversation-preview">
-                                {% if conversation.data.messages %}
-                                    {{ conversation.data.messages[-1].user }}
-                                {% else %}
-                                    {{ conversation.data.user_responses.get('symptoms', '') }}
-                                {% endif %}
-                            </div>
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <div class="empty-message">
-                <p>You don't have any conversations yet.</p>
-                <a href="/chat" class="btn btn-primary">Start a new chat</a>
-            </div>
-        {% endif %}
+        {% endfor %}
     </div>
-</body>
-</html> 
+    {% else %}
+    <div class="no-conversations">
+        <i class="fas fa-comments text-muted"></i>
+        <p>No conversations yet. Start chatting with our AI Health Assistant!</p>
+        <a href="{{ url_for('chat') }}" class="btn btn-primary">
+            Start New Chat
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.conversations-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.conversations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.conversations-header h2 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.conversation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.conversation-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.conversation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.conversation-info {
+    flex: 1;
+}
+
+.conversation-date {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.conversation-preview {
+    color: #2c3e50;
+    font-size: 1em;
+}
+
+.preview-user {
+    margin-bottom: 5px;
+    color: #007bff;
+}
+
+.preview-ai {
+    color: #6c757d;
+    font-size: 0.95em;
+}
+
+.conversation-actions {
+    margin-left: 20px;
+    margin-top: 5px;
+}
+
+.no-conversations {
+    text-align: center;
+    padding: 50px 20px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.no-conversations i {
+    font-size: 3em;
+    margin-bottom: 20px;
+    color: #6c757d;
+}
+
+.no-conversations p {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %} 

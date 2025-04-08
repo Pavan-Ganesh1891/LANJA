@@ -1,777 +1,341 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - HealthChat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
-</head>
-<body>
-    <div class="chat-page">
-        <header class="chat-header">
-            <div class="header-left">
-                <a href="/" class="back-button">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </a>
-                <div class="ai-avatar">
-                    <img src="{{ url_for('static', filename='images/ai-avatar.png') }}" alt="AI" 
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'><rect width=\'40\' height=\'40\' fill=\'%231E40AF\'/><text x=\'50%\' y=\'50%\' font-size=\'20\' fill=\'white\' text-anchor=\'middle\' dy=\'.3em\'>AI</text></svg>'">
-                </div>
-                <div class="ai-details">
-                    <h2>AI Health Assistant</h2>
-                    <span class="status">Online</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <button onclick="startNewChat()" class="new-chat-button" aria-label="New Chat">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span class="button-text">New Chat</span>
-                </button>
-                <button onclick="window.location.href='/conversations'" class="history-button" aria-label="Chat History">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span class="button-text">History</span>
-                </button>
-                <button onclick="window.location.href='/appointment'" class="book-slot-button" aria-label="Book Appointment">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span class="button-text">Book Appointment</span>
-                </button>
-                <button onclick="window.location.href='/admin'" class="admin-button" aria-label="Admin Dashboard">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2" stroke-linecap="round"/>
-                        <circle cx="9" cy="7" r="4" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span class="button-text">Admin</span>
-                </button>
-                <button onclick="window.location.href='/logout'" class="logout-button" aria-label="Logout">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-width="2" stroke-linecap="round"/>
-                        <polyline points="16 17 21 12 16 7" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="21" y1="12" x2="9" y2="12" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span class="button-text">Logout</span>
-                </button>
-            </div>
-        </header>
+{% extends "base.html" %}
 
-        <main class="chat-main">
-            <div class="chat-box" id="chat-box">
-                <!-- Welcome message -->
-                <div class="message ai-message">
-                    <div class="message-bubble">
-                        <div class="message-text">
-                            Hello! I'm your AI Health Assistant. While I can provide general information and suggestions, please note that I'm not a replacement for professional medical advice. For serious medical concerns, always consult with a qualified healthcare provider. Let's start with a few questions to better understand your situation. Are you a new or existing patient?
-                        </div>
-                        <div class="message-time" id="welcome-time"></div>
-                    </div>
-                </div>
-                <!-- Add options container here -->
-                <div id="options-container" class="options-container">
-                    <button class="option-button" onclick="handleResponse('new', 'patient-type')">New Patient</button>
-                    <button class="option-button" onclick="handleResponse('existing', 'patient-type')">Existing Patient</button>
-                </div>
-            </div>
-        </main>
-
-        <div class="chat-input-container">
-            <div class="chat-input-wrapper">
-                <form class="chat-form" onsubmit="handleTextResponse(event)" id="text-input-form" style="display: none;">
-                    <input type="text" id="chat-input" placeholder="Type your response..." autocomplete="off">
-                    <button type="submit" class="send-button">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                        </svg>
-                    </button>
-                </form>
-            </div>
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="chat-title">
+            <div class="ai-avatar">AI</div>
+            <h2>AI Health Assistant</h2>
+            <span class="status-badge online">Online</span>
+        </div>
+        <div class="chat-actions">
+            <button class="btn btn-primary" onclick="startNewChat()">
+                <i class="fas fa-plus"></i> New Chat
+            </button>
+            <button class="btn btn-secondary" onclick="window.location.href='/conversations'">
+                <i class="fas fa-history"></i> History
+            </button>
+            <button class="btn btn-success" onclick="window.location.href='/appointment'">
+                <i class="fas fa-calendar-check"></i> Book Appointment
+            </button>
         </div>
     </div>
 
-    <script>
-        let currentQuestion = 'patient-type';
-        let responses = {};
-        let conversationId = null;
-        let messages = [];
-        
-        const questions = {
-            'patient-type': {
-                next: (response) => response === 'existing' ? 'patient-id' : 'symptoms',
-                options: null
+    <div class="chat-messages" id="chat-messages">
+        <!-- Initial greeting message -->
+        <div class="message ai-message">
+            <div class="message-content">
+                Hello! I'm your AI Health Assistant. How can I help you with your health-related questions today?
+            </div>
+            <div class="message-timestamp">{{ current_time }}</div>
+        </div>
+    </div>
+
+    <div class="chat-input">
+        <form id="chat-form" onsubmit="sendMessage(event)">
+            <div class="input-group">
+                <input type="text" id="user-input" class="form-control" placeholder="Type your health-related question..." required autofocus>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentConversationId = null;
+
+function startNewChat() {
+    currentConversationId = null;
+    const messagesDiv = document.getElementById('chat-messages');
+    messagesDiv.innerHTML = `
+        <div class="message ai-message">
+            <div class="message-content">
+                Hello! I'm your AI Health Assistant. How can I help you with your health-related questions today?
+            </div>
+            <div class="message-timestamp">${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+    document.getElementById('user-input').focus();
+}
+
+function appendMessage(message, sender) {
+    const messagesDiv = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.textContent = message;
+    
+    const timestampDiv = document.createElement('div');
+    timestampDiv.className = 'message-timestamp';
+    timestampDiv.textContent = new Date().toLocaleTimeString();
+    
+    messageDiv.appendChild(contentDiv);
+    messageDiv.appendChild(timestampDiv);
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+async function sendMessage(event) {
+    event.preventDefault();
+    
+    const userInput = document.getElementById('user-input');
+    const message = userInput.value.trim();
+    
+    if (!message) return;
+    
+    // Disable input and show loading state
+    userInput.disabled = true;
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    // Display user message
+    appendMessage(message, 'user');
+    userInput.value = '';
+    
+    try {
+        const response = await fetch('/get_ai_response', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             },
-            'patient-id': {
-                next: () => 'symptoms',
-                options: null,
-                text: 'Please enter your Patient ID:'
-            },
-            'symptoms': {
-                next: () => 'recent-medicines',
-                options: null,
-                text: 'What symptoms are you experiencing?'
-            },
-            'recent-medicines': {
-                next: () => 'long-term-conditions',
-                options: null,
-                text: 'Have you taken any medicines for these symptoms in the past few days? If none, please type "None".'
-            },
-            'long-term-conditions': {
-                next: (response) => response === 'yes' ? 'conditions-details' : 'complete',
-                options: ['Yes', 'No'],
-                text: 'Do you have any long-term medical conditions?'
-            },
-            'conditions-details': {
-                next: () => 'complete',
-                options: null,
-                text: 'Please specify your long-term conditions:'
-            }
-        };
-
-        function handleResponse(response, questionType) {
-            // Add user's response to chat
-            addMessage(response, 'user');
-            
-            // Store the response
-            responses[questionType] = response;
-            
-            // Get next question
-            const nextQuestionType = questions[questionType].next(response);
-            
-            // If questionnaire is complete
-            if (nextQuestionType === 'complete') {
-                showSummary();
-                return;
-            }
-
-            // Ask next question
-            setTimeout(() => {
-                currentQuestion = nextQuestionType;
-                const nextQuestion = questions[nextQuestionType];
-                
-                addMessage(nextQuestion.text, 'ai');
-                
-                // Show either options or text input
-                if (nextQuestion.options) {
-                    showOptions(nextQuestion.options);
-                } else {
-                    showTextInput();
-                }
-            }, 500);
-        }
-
-        function handleTextResponse(event) {
-            event.preventDefault();
-            const input = document.getElementById('chat-input');
-            const response = input.value.trim();
-            
-            if (response) {
-                handleResponse(response, currentQuestion);
-                input.value = '';
-            }
-        }
-
-        function showOptions(options) {
-            const optionsContainer = document.getElementById('options-container');
-            const textInputForm = document.getElementById('text-input-form');
-            
-            // Create a new options container and add it to the chat box
-            const newOptionsContainer = document.createElement('div');
-            newOptionsContainer.className = 'options-container';
-            newOptionsContainer.innerHTML = options.map(option => 
-                `<button class="option-button" onclick="handleResponse('${option.toLowerCase()}', '${currentQuestion}')">${option}</button>`
-            ).join('');
-            
-            document.getElementById('chat-box').appendChild(newOptionsContainer);
-            
-            // Hide the text input form
-            textInputForm.style.display = 'none';
-            
-            // Scroll to the bottom
-            scrollToBottom();
-        }
-
-        function showTextInput() {
-            const textInputForm = document.getElementById('text-input-form');
-            textInputForm.style.display = 'flex';
-            
-            // Remove any existing options containers except the first one
-            const optionsContainers = document.querySelectorAll('.options-container');
-            optionsContainers.forEach((container, index) => {
-                if (index !== 0) container.remove();
-            });
-            
-            // Scroll to the bottom
-            scrollToBottom();
-        }
-
-        function showSummary() {
-            const summary = `Thank you for providing your information. I'll analyze your symptoms and provide some recommendations.`;
-
-            setTimeout(() => {
-                addMessage(summary, 'ai');
-                
-                // Store messages if any
-                if (messages.length > 0) {
-                    responses.messages = messages;
-                }
-                
-                // Add conversation ID if we have one
-                if (conversationId) {
-                    responses.conversation_id = conversationId;
-                }
-                
-                // Show typing indicator
-                const typingIndicator = addTypingIndicator();
-                
-                // Make API call to get AI response
-                fetch('/get_ai_response', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(responses),
-                    // Add a timeout to prevent long waiting
-                    signal: AbortSignal.timeout(15000) // 15 seconds timeout
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Remove typing indicator
-                    typingIndicator.remove();
-                    
-                    addMessage(data.response, 'ai');
-                    // Save conversation ID from response
-                    conversationId = data.conversation_id;
-                    
-                    addMessage("Do you have any specific questions about your condition? I'm here to help!", 'ai');
-                    
-                    // Update form submission handler for follow-up questions
-                    const form = document.getElementById('text-input-form');
-                    form.onsubmit = handleFollowupQuestion;
-                    showTextInput();
-                })
-                .catch(error => {
-                    // Remove typing indicator
-                    typingIndicator.remove();
-                    
-                    console.error('Error:', error);
-                    addMessage("I apologize, but I'm having trouble connecting to our health services. Please try again later.", 'ai');
-                    showTextInput();
-                });
-            }, 500);
-        }
-
-        function handleFollowupQuestion(event) {
-            event.preventDefault();
-            const input = document.getElementById('chat-input');
-            const question = input.value.trim();
-            
-            if (question) {
-                // Add user's question to chat
-                addMessage(question, 'user');
-                input.value = '';
-                
-                // Store message
-                const newMessage = {
-                    user: question,
-                    timestamp: new Date().toISOString()
-                };
-                
-                messages.push(newMessage);
-                
-                // Show typing indicator
-                const typingIndicator = addTypingIndicator();
-                
-                // Make API call for follow-up question
-                fetch('/handle_followup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: question,
-                        previous_responses: responses,
-                        conversation_id: conversationId
-                    }),
-                    // Add a timeout to prevent long waiting
-                    signal: AbortSignal.timeout(15000) // 15 seconds timeout
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Remove typing indicator
-                    typingIndicator.remove();
-                    
-                    // Add AI response
-                    addMessage(data.response, 'ai');
-                    
-                    // Store AI response
-                    messages[messages.length - 1].ai = data.response;
-                    
-                    // Update conversation ID if it changed
-                    if (data.conversation_id) {
-                        conversationId = data.conversation_id;
-                    }
-                })
-                .catch(error => {
-                    // Remove typing indicator
-                    typingIndicator.remove();
-                    
-                    console.error('Error:', error);
-                    addMessage("I apologize, but I'm having trouble connecting to our health services. Please try again later.", 'ai');
-                });
-            }
-        }
-
-        function addTypingIndicator() {
-            const chatBox = document.getElementById('chat-box');
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message ai-message typing';
-            typingDiv.innerHTML = `
-                <div class="message-bubble">
-                    <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                </div>
-            `;
-            chatBox.appendChild(typingDiv);
-            scrollToBottom();
-            return typingDiv;
-        }
-
-        // Set welcome message time when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            const welcomeTime = document.getElementById('welcome-time');
-            welcomeTime.textContent = new Date().toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
+            body: JSON.stringify({
+                message: message,
+                conversation_id: currentConversationId
+            })
         });
-
-        function addMessage(text, sender) {
-            const chatBox = document.getElementById('chat-box');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            
-            const currentTime = new Date().toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-            
-            messageDiv.innerHTML = `
-                <div class="message-bubble">
-                    <div class="message-text">${text}</div>
-                    <div class="message-time">${currentTime}</div>
-                </div>
-            `;
-            
-            chatBox.appendChild(messageDiv);
-            scrollToBottom();
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            currentConversationId = data.conversation_id;
+            appendMessage(data.response, 'ai');
+        } else {
+            appendMessage("I apologize, but I'm having trouble processing your request. Please try again.", 'ai');
         }
+    } catch (error) {
+        console.error('Error:', error);
+        appendMessage("I apologize, but I'm having trouble connecting to our health services. Please try again later.", 'ai');
+    } finally {
+        // Re-enable input and restore button state
+        userInput.disabled = false;
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+        userInput.focus();
+    }
+}
 
-        // Add new function for scrolling
-        function scrollToBottom() {
-            const chatBox = document.getElementById('chat-box');
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+// Handle Enter key
+document.getElementById('user-input').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    }
+});
+</script>
 
-        // Add CSS for typing indicator
-        const style = document.createElement('style');
-        style.textContent = `
-            .typing-indicator {
-                display: flex;
-                gap: 4px;
-                padding: 8px;
-            }
+<style>
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
 
-            .typing-indicator span {
-                width: 8px;
-                height: 8px;
-                background: #90A4AE;
-                border-radius: 50%;
-                animation: bounce 1.3s linear infinite;
-            }
+.chat-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-            .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
-            .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+.chat-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-            @keyframes bounce {
-                0%, 60%, 100% { transform: translateY(0); }
-                30% { transform: translateY(-4px); }
-            }
-        `;
-        document.head.appendChild(style);
+.ai-avatar {
+    width: 40px;
+    height: 40px;
+    background: #4a90e2;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
 
-        function startNewChat() {
-            // Clear previous responses and data
-            responses = {};
-            conversationId = null;
-            messages = [];
-            currentQuestion = 'patient-type';
-            
-            // Clear chat box except for the welcome message
-            const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML = `
-                <div class="message ai-message">
-                    <div class="message-bubble">
-                        <div class="message-text">
-                            Hello! I'm your AI Health Assistant. While I can provide general information and suggestions, please note that I'm not a replacement for professional medical advice. For serious medical concerns, always consult with a qualified healthcare provider. Let's start with a few questions to better understand your situation. Are you a new or existing patient?
-                        </div>
-                        <div class="message-time">${new Date().toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        })}</div>
-                    </div>
-                </div>
-                <div id="options-container" class="options-container">
-                    <button class="option-button" onclick="handleResponse('new', 'patient-type')">New Patient</button>
-                    <button class="option-button" onclick="handleResponse('existing', 'patient-type')">Existing Patient</button>
-                </div>
-            `;
-            
-            // Reset the form to initial state
-            const textInputForm = document.getElementById('text-input-form');
-            textInputForm.style.display = 'none';
-            textInputForm.onsubmit = handleTextResponse;
-            
-            // Clear the input field
-            document.getElementById('chat-input').value = '';
-            
-            // Scroll to top
-            chatBox.scrollTop = 0;
-        }
-    </script>
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+}
 
-    <style>
-        .chat-page {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
+.status-badge.online {
+    background: #28a745;
+    color: white;
+}
 
-        .chat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background-color: white;
-            border-bottom: 1px solid #e5e7eb;
-        }
+.chat-actions {
+    display: flex;
+    gap: 10px;
+}
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
 
-        .back-button {
-            color: #4B5563;
-            padding: 8px;
-            border-radius: 50%;
-            transition: background-color 0.2s;
-        }
+.message {
+    max-width: 80%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    animation: fadeIn 0.3s ease;
+}
 
-        .back-button:hover {
-            background-color: #F3F4F6;
-        }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-        .ai-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            overflow: hidden;
-        }
+.user-message {
+    align-self: flex-end;
+    background: #007bff;
+    color: white;
+}
 
-        .ai-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+.ai-message {
+    align-self: flex-start;
+    background: #f8f9fa;
+    color: #212529;
+}
 
-        .ai-details {
-            display: flex;
-            flex-direction: column;
-        }
+.message-content {
+    margin-bottom: 5px;
+    line-height: 1.5;
+}
 
-        .ai-details h2 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: #111827;
-        }
+.message-timestamp {
+    font-size: 0.7em;
+    opacity: 0.7;
+    text-align: right;
+}
 
-        .status {
-            font-size: 0.875rem;
-            color: #10B981;
-        }
+.chat-input {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
 
-        /* Keep the new chat button styles */
-        .header-right {
-            margin-left: auto;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
+.input-group {
+    display: flex;
+    gap: 10px;
+}
 
-        .new-chat-button, .book-slot-button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
+#user-input {
+    flex-grow: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+}
 
-        .new-chat-button:hover, .book-slot-button:hover {
-            background-color: #1E3A8A;
-        }
+#user-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
 
-        .new-chat-button svg, .book-slot-button svg {
-            stroke: currentColor;
-        }
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
 
-        .chat-main {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
 
-        .chat-box {
-            height: 100%;
-            overflow-y: auto;
-            padding: 20px;
-            padding-bottom: 80px;
-        }
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
 
-        .message {
-            margin-bottom: 1rem;
-            display: flex;
-            flex-direction: column;
-        }
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
 
-        .user-message {
-            align-items: flex-end;
-        }
+.btn-success {
+    background: #28a745;
+    color: white;
+}
 
-        .ai-message {
-            align-items: flex-start;
-        }
+.btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
 
-        .message-bubble {
-            max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 16px;
-            position: relative;
-        }
+/* Scrollbar styling */
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
 
-        .user-message .message-bubble {
-            background-color: #1E40AF;
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
 
-        .ai-message .message-bubble {
-            background-color: #F3F4F6;
-            color: #111827;
-            border-bottom-left-radius: 4px;
-        }
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
 
-        .message-time {
-            font-size: 0.75rem;
-            margin-top: 4px;
-            opacity: 0.7;
-        }
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
 
-        .chat-input-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 15px;
-            border-top: 1px solid #e5e7eb;
-        }
+/* Responsive design */
+@media (max-width: 768px) {
+    .chat-container {
+        height: calc(100vh - 100px);
+        margin: -1rem;
+        border-radius: 0;
+    }
 
-        .chat-input-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+    .chat-header {
+        padding: 15px;
+    }
 
-        .chat-form {
-            width: 100%;
-            display: flex;
-            gap: 10px;
-        }
+    .chat-actions {
+        display: none;
+    }
 
-        .chat-form input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 1px solid #e5e7eb;
-            border-radius: 20px;
-            outline: none;
-            font-size: 0.95rem;
-        }
+    .message {
+        max-width: 90%;
+    }
 
-        .chat-form input:focus {
-            border-color: #1E40AF;
-        }
-
-        .send-button {
-            background: #1E40AF;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            padding: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s;
-        }
-
-        .send-button:hover {
-            background: #1E3A8A;
-        }
-
-        .options-container {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-        }
-
-        .option-button {
-            background-color: #1E40AF;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .option-button:hover {
-            background-color: #1E3A8A;
-        }
-
-        /* Style for the book slot button */
-        .book-slot-button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background-color: #10B981;  /* Green color for distinction */
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .book-slot-button:hover {
-            background-color: #059669;
-        }
-
-        .book-slot-button svg {
-            stroke: currentColor;
-        }
-
-        /* Make buttons responsive */
-        @media (max-width: 640px) {
-            .header-right {
-                gap: 8px;
-            }
-
-            .new-chat-button, .book-slot-button {
-                padding: 8px;
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                justify-content: center;
-            }
-
-            .button-text {
-                display: none;
-            }
-
-            .new-chat-button svg, .book-slot-button svg {
-                width: 20px;
-                height: 20px;
-                margin: 0;
-            }
-        }
-
-        /* Add tooltip for mobile */
-        @media (max-width: 640px) {
-            .new-chat-button, .book-slot-button {
-                position: relative;
-            }
-
-            .new-chat-button:hover::after,
-            .book-slot-button:hover::after {
-                content: attr(aria-label);
-                position: absolute;
-                bottom: -30px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 12px;
-                white-space: nowrap;
-                z-index: 1000;
-            }
-        }
-
-        .history-button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background-color: #4b5563;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .history-button:hover {
-            background-color: #374151;
-        }
-
-        .history-button svg {
-            stroke: currentColor;
-        }
-    </style>
-</body>
-</html>
+    .btn {
+        padding: 8px 16px;
+    }
+}
+</style>
+{% endblock %}

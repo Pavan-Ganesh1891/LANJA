@@ -1,18 +1,116 @@
-from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, jsonify, make_response
 import os
 from ai_helper import generate_medical_response, handle_followup_question
-from auth import init_user_db, authenticate_user, register_user, get_all_users
-from conversation import init_conversations_db, save_conversation, get_user_conversations, get_conversation
-from reminders import init_reminders_db, save_reminder, get_user_reminders, delete_reminder, get_reminder
+from database import mongo, User, Conversation, Reminder, MONGO_URI, get_direct_mongo_client, get_database
 from reminder_sender import start_reminder_scheduler
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
+import hashlib
+import uuid
+from dotenv import load_dotenv
+from bson.objectid import ObjectId
+import sys
+import tempfile
+import logging
+
+# Load environment variables
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('app.log')
+    ]
+)
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Replace with a secure secret key in production
+app.logger.setLevel(logging.DEBUG)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your_secret_key_here')
+
+# Session configuration
+app.config['SESSION_PERMANENT'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# MongoDB configuration
+app.config['MONGO_URI'] = MONGO_URI
+
+# Initialize MongoDB
+mongo.init_app(app)
+
+# Add debug logging for session operations
+@app.before_request
+def log_request_info():
+    app.logger.debug('Headers: %s', request.headers)
+    app.logger.debug('Session: %s', dict(session))
 
 # Constants
-ADMIN_EMAIL = 'pavan@gmail.com'
+
+# Add cache control headers to prevent caching
+@app.after_request
+def add_header(response):
+    """Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
+# Check session before each request
+@app.before_request
+def before_request():
+    # Skip session check for static files and certain routes
+    if request.endpoint and 'static' in request.endpoint or request.endpoint in ['login', 'signup', 'home']:
+        return
+    
+    # Check if user is logged in and verify session data is complete
+    if session.get('logged_in'):
+        # Verify all required session data exists
+        required_fields = ['email', 'user_id', 'first_name']
+        if not all(field in session for field in required_fields):
+            # If any required field is missing, clear the session
+            session.clear()
+            return redirect(url_for('login'))
+    
+    # Redirect to login if trying to access protected routes while not logged in
+    protected_routes = ['dashboard', 'chat', 'reminders', 'conversations', 'view_conversation']
+    if not session.get('logged_in') and request.endpoint in protected_routes:
+        return redirect(url_for('login'))
+
+# Initialize database indexes
+def init_db_indexes():
+    """Initialize database indexes using direct MongoDB connection"""
+    try:
+        # Get database directly
+        db = get_database()
+        
+        # Create indexes
+        db.users.create_index("email", unique=True)
+        db.conversations.create_index("conversation_id", unique=True)
+        db.conversations.create_index("user_id")
+        db.reminders.create_index("user_id")
+        
+        print("Database indexes created successfully")
+        return True
+    except Exception as e:
+        app.logger.error(f"Error creating indexes: {str(e)}")
+        print(f"Error creating indexes: {str(e)}")
+        return False
+
+# Verify MongoDB connection
+def verify_mongodb_connection():
+    try:
+        # Try to connect directly to MongoDB
+        client = get_direct_mongo_client()
+        client.admin.command('ping')
+        print("MongoDB connection verified successfully")
+        client.close()
+        return True
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {str(e)}")
+        return False
 
 def login_required(f):
     @wraps(f)
@@ -22,85 +120,163 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            return redirect(url_for('login'))
-        if session.get('email') != ADMIN_EMAIL:
-            return redirect(url_for('dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
+# Helper functions
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def get_user_by_email(email):
+    try:
+        return User.find_by_email(email)
+    except Exception as e:
+        app.logger.error(f"Error finding user by email: {str(e)}")
+        return None
 
 @app.route('/')
 def home():
+    """Home page route"""
+    # If user is logged in, redirect to chat
+    if session.get('logged_in'):
+        return redirect(url_for('chat'))
     return render_template('home.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        remember = request.form.get('remember') == 'on'
+    """Login route"""
+    try:
+        # Clear any existing session
+        session.clear()
+        app.logger.debug('Session cleared at start of login')
         
-        # Authenticate user
-        success, result = authenticate_user(email, password)
+        if request.method == 'POST':
+            email = request.form.get('email')
+            password = request.form.get('password')
+            remember = request.form.get('remember') == 'on'
+            
+            app.logger.debug('Login attempt for email: %s', email)
+            
+            if not email or not password:
+                app.logger.warning('Login attempt with missing email or password')
+                return render_template('login.html', error="Please provide both email and password")
+            
+            user = get_user_by_email(email)
+            
+            if not user:
+                app.logger.warning('Login attempt with non-existent email: %s', email)
+                return render_template('login.html', error="Invalid email or password")
+            
+            if user['password'] == hash_password(password):
+                # Set session data
+                session.clear()  # Clear again just to be safe
+                session['logged_in'] = True
+                session['email'] = email
+                session['first_name'] = user.get('first_name', 'User')
+                session['last_name'] = user.get('last_name', '')
+                session['user_id'] = str(user['_id'])
+                
+                # Set session permanence based on remember me
+                if remember:
+                    session.permanent = True
+                    app.permanent_session_lifetime = timedelta(days=7)
+                else:
+                    session.permanent = False
+                
+                app.logger.info('Successful login for user: %s', email)
+                app.logger.debug('Session after login: %s', dict(session))
+                
+                return redirect(url_for('dashboard'))
+            else:
+                app.logger.warning('Login attempt with incorrect password for email: %s', email)
+                return render_template('login.html', error="Invalid email or password")
         
-        if success:
-            # Set session data for logged in user
-            user = result
-            session['logged_in'] = True
-            session['email'] = email
-            session['first_name'] = user['firstName']
-            session['last_name'] = user['lastName']
-            
-            # If remember me is checked, make session permanent
-            if remember:
-                session.permanent = True
-            
-            return redirect(url_for('dashboard'))
-        else:
-            # Display error message
-            return render_template('login.html', error=result)
-    
-    return render_template('login.html')
+        return render_template('login.html')
+    except Exception as e:
+        app.logger.error('Login error: %s', str(e), exc_info=True)
+        return render_template('login.html', error="An error occurred during login. Please try again.")
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
+@app.route('/register', methods=['GET', 'POST'])
+def register():
     if request.method == 'POST':
-        # Get form data
         first_name = request.form.get('firstName')
         last_name = request.form.get('lastName')
         email = request.form.get('email')
         password = request.form.get('password')
         
-        # Register user
-        success, error_message = register_user(first_name, last_name, email, password)
+        if get_user_by_email(email):
+            return render_template('signup.html', error="Email already registered")
         
-        if success:
-            # Set session data
-            session['logged_in'] = True
-            session['email'] = email
-            session['first_name'] = first_name
-            session['last_name'] = last_name
-            
-            # Redirect to dashboard after successful signup
-            return redirect(url_for('dashboard'))
-        else:
-            return render_template('signup.html', error=error_message)
+        try:
+            user = User.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                password=hash_password(password)
+            )
+            return redirect(url_for('login'))
+        except Exception as e:
+            return render_template('signup.html', error="An error occurred during registration")
     
     return render_template('signup.html')
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    """Handle signup requests"""
+    try:
+        if request.method == 'POST':
+            first_name = request.form.get('firstName', '').strip()
+            last_name = request.form.get('lastName', '').strip()
+            email = request.form.get('email', '').strip()
+            password = request.form.get('password', '')
+            
+            # Validate input
+            if not all([first_name, last_name, email, password]):
+                return render_template('signup.html', error="All fields are required")
+            
+            # Check if email already exists
+            if get_user_by_email(email):
+                return render_template('signup.html', error="Email already registered")
+            
+            try:
+                # Create new user
+                user = User.create(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=hash_password(password)
+                )
+                
+                if user:
+                    # Redirect to login page with success message
+                    return render_template('login.html', success="Registration successful! Please login.")
+                else:
+                    return render_template('signup.html', error="Failed to create user. Please try again.")
+                    
+            except Exception as e:
+                app.logger.error(f"User creation error: {str(e)}")
+                return render_template('signup.html', error="An error occurred during registration")
+        
+        return render_template('signup.html')
+        
+    except Exception as e:
+        app.logger.error(f"Signup error: {str(e)}")
+        return render_template('signup.html', error="An error occurred. Please try again.")
+
 @app.route('/logout')
 def logout():
-    # Clear session data
+    # Clear all session data
     session.clear()
-    return redirect(url_for('home'))
+    
+    # Create response with redirect and no-cache headers
+    response = make_response(redirect(url_for('home')))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 
 @app.route('/chat')
 @login_required
 def chat():
-    return render_template('chat.html')
+    current_time = datetime.now().strftime('%I:%M %p')
+    return render_template('chat.html', current_time=current_time)
 
 @app.route('/appointment', methods=['GET', 'POST'])
 @login_required
@@ -186,41 +362,61 @@ def favicon():
 
 @app.route('/get_ai_response', methods=['POST'])
 def get_ai_response():
-    # Make sure user is logged in
     if not session.get('logged_in'):
         return jsonify({'error': 'Not authenticated'}), 401
     
-    user_responses = request.json
-    conversation_id = user_responses.pop('conversation_id', None)
+    data = request.json
+    user_message = data.get('message', '')
+    conversation_id = data.get('conversation_id')
     
     try:
-        # Get AI response
-        ai_response = generate_medical_response(user_responses)
+        ai_response = generate_medical_response(user_message)
         
-        # Prepare conversation data for storage
+        # Create a new conversation if no conversation_id was provided
+        if not conversation_id:
+            conversation_id = str(uuid.uuid4())
+        
+        # Save the conversation to the database
         conversation_data = {
-            'user_responses': user_responses,
-            'ai_response': ai_response,
-            'messages': user_responses.get('messages', [])
+            'messages': [
+                {
+                    'user': user_message,
+                    'ai': ai_response,
+                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+            ]
         }
         
-        # Save conversation
-        saved_id = save_conversation(session['email'], conversation_data, conversation_id)
+        # Check if the conversation already exists
+        existing_conversation = Conversation.find_by_conversation_id(conversation_id)
+        
+        if existing_conversation:
+            # Update the existing conversation by appending the new message
+            existing_messages = existing_conversation.get('conversation_data', {}).get('messages', [])
+            conversation_data['messages'] = existing_messages + conversation_data['messages']
+            
+            mongo.db.conversations.update_one(
+                {'conversation_id': conversation_id},
+                {'$set': {'conversation_data': conversation_data}}
+            )
+        else:
+            # Create a new conversation
+            Conversation.create(
+                conversation_id=conversation_id,
+                user_id=session.get('user_id'),
+                conversation_data=conversation_data
+            )
         
         return jsonify({
             'response': ai_response,
-            'conversation_id': saved_id
+            'conversation_id': conversation_id
         })
     except Exception as e:
-        app.logger.error(f"Exception in get_ai_response: {str(e)}")
-        return jsonify({
-            'response': "I apologize, but I'm having trouble connecting to our AI services. Please try again later.",
-            'error': str(e)
-        }), 500
+        app.logger.error(f"Error generating AI response: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/handle_followup', methods=['POST'])
 def handle_followup():
-    # Make sure user is logged in
     if not session.get('logged_in'):
         return jsonify({'error': 'Not authenticated'}), 401
     
@@ -233,16 +429,15 @@ def handle_followup():
         return jsonify({'error': 'Missing required information'}), 400
     
     try:
-        # Get response from AI
         response = handle_followup_question(question, previous_responses)
         
-        # Update conversation with new message
         if conversation_id:
-            current_conversation = get_conversation(conversation_id)
-            if current_conversation and current_conversation['user_id'] == session['email']:
-                conversation_data = current_conversation['data']
+            user = get_user_by_email(session['email'])
+            conversation = Conversation.find_by_conversation_id(conversation_id)
+            
+            if conversation:
+                conversation_data = conversation['conversation_data']
                 
-                # Append new messages
                 if 'messages' not in conversation_data:
                     conversation_data['messages'] = []
                 
@@ -252,107 +447,95 @@ def handle_followup():
                     'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 })
                 
-                # Save updated conversation
-                save_conversation(session['email'], conversation_data, conversation_id)
+                conversation_data['messages'] = conversation_data['messages'][-10:]  # Limit to 10 messages
+                
+                mongo.db.conversations.update_one(
+                    {'conversation_id': conversation_id},
+                    {'$set': {'conversation_data': conversation_data}}
+                )
         
         return jsonify({'response': response, 'conversation_id': conversation_id})
     
     except Exception as e:
-        app.logger.error(f"Exception in handle_followup: {str(e)}")
-        return jsonify({
-            'response': "I apologize, but I'm having trouble connecting to our AI services. Please try again later.",
-            'error': str(e)
-        }), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/conversations')
+@login_required
 def conversations():
-    # Make sure user is logged in
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    
-    # Get user's conversations
-    user_conversations = get_user_conversations(session['email'])
-    
+    user = get_user_by_email(session['email'])
+    user_conversations = [conv for conv in Conversation.find_all_by_user_id(user['_id'])]
     return render_template('conversations.html', conversations=user_conversations)
 
 @app.route('/conversation/<conversation_id>')
+@login_required
 def view_conversation(conversation_id):
-    # Make sure user is logged in
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
+    user = get_user_by_email(session['email'])
+    conversation = Conversation.find_by_conversation_id(conversation_id)
     
-    # Get conversation
-    conversation = get_conversation(conversation_id)
-    
-    # Check if conversation exists and belongs to the user
-    if not conversation or conversation['user_id'] != session['email']:
+    if not conversation:
         return redirect(url_for('conversations'))
     
     return render_template('view_conversation.html', conversation=conversation)
 
-@app.route('/admin')
-@admin_required
-def admin():
-    # Get all users
-    users = get_all_users()
-    return render_template('admin.html', users=users)
-
 @app.route('/reminders')
 @login_required
 def reminders():
-    # Get user's reminders
-    all_reminders = get_user_reminders(session['email'])
+    user = get_user_by_email(session['email'])
+    all_reminders = [reminder for reminder in Reminder.find_all_by_user_id(user['_id'])]
     
-    # Separate medication and hydration reminders
     medication_reminders = []
     hydration_reminders = []
     
     for reminder in all_reminders:
-        reminder_type = reminder['data'].get('type')
+        reminder_type = reminder['reminder_data'].get('type')
         if reminder_type == 'medication':
             medication_reminders.append(reminder)
         elif reminder_type == 'hydration':
             hydration_reminders.append(reminder)
     
     return render_template('reminders.html', 
-                           medication_reminders=medication_reminders,
-                           hydration_reminders=hydration_reminders)
+                         medication_reminders=medication_reminders,
+                         hydration_reminders=hydration_reminders)
 
 @app.route('/save_reminder', methods=['POST'])
 @login_required
 def add_reminder():
     try:
-        # Get reminder data from request
         reminder_data = request.json
+        user = get_user_by_email(session['email'])
         
-        # Save reminder to database
-        reminder_id = save_reminder(session['email'], reminder_data)
+        # Create a new reminder
+        reminder = Reminder.create(
+            reminder_id=str(uuid.uuid4()),
+            user_id=user['_id'],
+            reminder_data=reminder_data
+        )
         
-        return jsonify({'success': True, 'reminder_id': reminder_id})
+        return jsonify({'success': True, 'reminder_id': str(reminder['_id'])})
     except Exception as e:
-        app.logger.error(f"Exception in save_reminder: {str(e)}")
+        app.logger.error(f"Error saving reminder: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/delete_reminder', methods=['POST'])
 @login_required
 def remove_reminder():
     try:
-        # Get reminder ID from request
         data = request.json
         reminder_id = data.get('reminder_id')
         
         if not reminder_id:
             return jsonify({'success': False, 'error': 'No reminder ID provided'}), 400
         
-        # Delete reminder
-        success = delete_reminder(reminder_id, session['email'])
+        user = get_user_by_email(session['email'])
+        reminder = Reminder.find_by_id(reminder_id)
         
-        if success:
+        if reminder and str(reminder['user_id']) == str(user['_id']):
+            Reminder.delete(reminder)
             return jsonify({'success': True})
         else:
-            return jsonify({'success': False, 'error': 'Reminder not found'}), 404
+            return jsonify({'success': False, 'error': 'Reminder not found or unauthorized'}), 404
     except Exception as e:
-        app.logger.error(f"Exception in delete_reminder: {str(e)}")
+        app.logger.error(f"Error deleting reminder: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/dashboard')
@@ -361,19 +544,14 @@ def dashboard():
     # Get user's first name for personalized greeting
     first_name = session.get('first_name', 'User')
     
-    # Check if user is admin
-    is_admin = session.get('email') == ADMIN_EMAIL
-    
-    return render_template('dashboard.html', first_name=first_name, is_admin=is_admin)
+    return render_template('dashboard.html', first_name=first_name)
 
 if __name__ == '__main__':
-    # Initialize databases
-    init_user_db()
-    init_conversations_db()
-    init_reminders_db()
+    # Initialize database indexes
+    init_db_indexes()
     
     # Start the reminder scheduler
     start_reminder_scheduler()
     
-    # Run the Flask app
+    # Run the application
     app.run(debug=True)
