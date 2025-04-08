@@ -557,7 +557,13 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     
     # Run the application
-    if app.config['FLASK_ENV'] == 'development':
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    if debug_mode:
         app.run(debug=True, host='127.0.0.1', port=port)
     else:
+        # Production settings
+        app.config['PREFERRED_URL_SCHEME'] = 'https'
+        app.config['SESSION_COOKIE_SECURE'] = True
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
         app.run(host='0.0.0.0', port=port)
